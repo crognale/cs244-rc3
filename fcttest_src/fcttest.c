@@ -17,9 +17,13 @@
 #include <stdbool.h>
 #include <time.h>
 
+#define vprintf(...)  {if(verbose) printf(__VA_ARGS__);}
+
 static void do_server(uint16_t port);
 static void do_client(const char *addr, uint16_t port);
 static void set_rc3_options(int sock_fd);
+
+bool verbose = false;
 
 bool rc3 = false;
 bool rc3_log = false;
@@ -35,40 +39,44 @@ int main(int argc, char *argv[])
   uint16_t port = 0;
   char *address = 0;
 
-  while ((opt = getopt(argc, argv, "sca:p:g:rlt")) != -1) {
+  while ((opt = getopt(argc, argv, "sca:p:g:rltv")) != -1) {
     switch (opt) {
     case 's':
-      printf("server mode\n");
+      vprintf("server mode\n");
       server = true;
       break;
     case 'c':
-      printf("client mode\n");
+      vprintf("client mode\n");
       client = true;
       break;
     case 'p':
       port = atoi(optarg);
-      printf("port = %d\n", port);
+      vprintf("port = %d\n", port);
       break;
     case 'a':
-      printf("address = %s\n", optarg);
+      vprintf("address = %s\n", optarg);
       address = malloc(strlen(optarg)+1);
       strcpy(address, optarg);
       break;
     case 'g':
       length = atoi(optarg);
-      printf("length = %d\n", length);
+      vprintf("length = %d\n", length);
       break;
     case 'r':
-      printf("RC3 mode on!\n");
+      vprintf("RC3 mode on!\n");
       rc3 = true;
       break;
     case 'l':
-      printf("RC3 logging mode on!\n");
+      vprintf("RC3 logging mode on!\n");
       rc3_log = true;
       break;
     case 't':
-      printf("RC3 logging time mode on!\n");
+      vprintf("RC3 logging time mode on!\n");
       rc3_logtime = true;
+      break;
+    case 'v':
+      verbose = true;
+      vprintf("Verbose mode on!.\n");
       break;
     default:
       fprintf(stderr, "Usage: %s (-s|-c)\n", argv[0]);
@@ -145,7 +153,7 @@ static void do_server(uint16_t port)
       exit(EXIT_FAILURE);
     }
 
-    printf("Got connection!\n");
+    vprintf("Got connection!\n");
 
     set_rc3_options(client_fd);
 
@@ -162,13 +170,13 @@ static void do_server(uint16_t port)
       total += got;
     }
 
-    printf("Writing response $\n");
+    vprintf("Writing response $\n");
 
     char response_token = '$';
     write(client_fd, &response_token, 1);
 
     buffer[length-1]= '\0';
-    printf("Transfered string: \"%s\" \n", buffer);
+    vprintf("Transfered string: \"%s\" \n", buffer);
 
     close(client_fd);
   }
@@ -228,8 +236,20 @@ static void do_client(const char *addr, uint16_t port)
 
   double f_msecs = nanodiff / (1000.0 * 1000.0);
 
-  printf("Time difference: %d secs, %ld nsecs\n", secs, nsecs);
-  printf("Time difference: %f msecs\n", f_msecs);
+
+  //printf("Debug code!\n");
+  //if (f_msecs < 2) {
+  //  printf("start time: %d secs, %ld nsecs\n", (int)time_start.tv_sec, time_start.tv_nsec);
+  //  printf("finish time: %d secs, %ld nsecs\n", (int)time_finish.tv_sec, time_finish.tv_nsec);
+  //}
+
+  if (verbose) {
+    printf("Time difference: %d secs, %ld nsecs\n", secs, nsecs);
+    printf("Time difference: %f msecs\n", f_msecs);
+  }
+  else {
+    printf("%f\n", f_msecs);
+  }
 
 }
 
@@ -241,7 +261,7 @@ static void set_rc3_options(int sock_fd)
   #define SO_LOGTIME 62
   int val = 1;
   if(rc3) {
-    printf("Enabling rc3.\n");
+    vprintf("Enabling rc3.\n");
     if(setsockopt(sock_fd, SOL_SOCKET, SO_RC3, &val, sizeof(val))) {
       fprintf(stderr, "[ERROR] setting up RC3.");
       exit(EXIT_FAILURE);
@@ -249,7 +269,7 @@ static void set_rc3_options(int sock_fd)
   }
 
   if(rc3_log) {
-    printf("Enabling rc3 logging.\n");
+    vprintf("Enabling rc3 logging.\n");
     if(setsockopt(sock_fd, SOL_SOCKET, SO_LOGME, &val, sizeof(val))) {
       fprintf(stderr, "[ERROR] setting up RC3 logging.");
       exit(EXIT_FAILURE);
@@ -257,7 +277,7 @@ static void set_rc3_options(int sock_fd)
   }
 
   if(rc3_logtime) {
-    printf("Enabling rc3 logging time.\n");
+    vprintf("Enabling rc3 logging time.\n");
     if(setsockopt(sock_fd, SOL_SOCKET, SO_LOGTIME, &val, sizeof(val))) {
       fprintf(stderr, "[ERROR] setting up RC3 logging time.");
       exit(EXIT_FAILURE);
