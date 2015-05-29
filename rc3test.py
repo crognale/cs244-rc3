@@ -13,6 +13,7 @@ from signal import SIGINT
 import subprocess
 import json
 import matplotlib.pyplot as plt
+import argparse
 from figure15_helpers import *
 
 
@@ -511,6 +512,14 @@ def rc3Test(configs):
 
 if __name__ == '__main__':
     lg.setLogLevel('info')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--nflows', type=int, 
+        help="Number of flows per RC3 Test")
+    args = parser.parse_args()
+    if args.nflows:
+        RC3_fct_test_configs[0]['flows_per_test']=args.nflows
+        RC3_fct_test_configs[1]['flows_per_test']=args.nflows
 
     # Priority Queue Test - With direct host connections.
     # Run at 100Mbps with 2ms link delay because that appears to be stable
